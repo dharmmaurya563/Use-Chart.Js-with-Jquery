@@ -1,0 +1,295 @@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.js"></script>
+<style>
+        table.tile_info td i {
+            margin-right: 8px;
+            font-size: 17px;
+            float: left;
+            width: 18px;
+            line-height: 28px;
+        }
+
+        .x_panel {
+            width: 100%;
+            padding: 10px 17px;
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #E6E9ED;
+            -webkit-column-break-inside: avoid;
+            -moz-column-break-inside: avoid;
+            column-break-inside: avoid;
+            opacity: 1;
+            transition: all .2s ease;
+            margin-bottom: 10px;
+        }
+
+        .x_title {
+            border-bottom: 2px solid #E6E9ED;
+            padding: 1px 5px 6px;
+            color: #73879C;
+        }
+
+            .x_title h2 {
+                margin: 3px 0 3px;
+                float: left;
+                display: block;
+                font-size: 20px;
+            }
+
+        #_merchantChart {
+            width: 100% !important;
+        }
+
+        #_missionHeaderChart {
+            width: 80% !important;
+            height: 250px !important;
+        }
+    </style>
+<div>
+                    <% if (!(string.IsNullOrEmpty(mobj_JSONresult_missingData)))
+                       {%>
+                    <script>
+
+                        BindTable();
+                        function BindTable() {
+                            var mdte = "";
+                            var _merchant = "";
+                            var mobjData = JSON.parse('<%=mobj_JSONresult_missingData %>');
+                            if (mobjData.length > 0) {
+                                for (var i = 0; i < mobjData.length; i++) {
+
+                                    //Set Header
+                                    //if (i == 0) {
+                                    //    var Thead = "";
+                                    //    Thead = Thead + "<th>Cinema Name</th>"
+                                    //    Thead = Thead + "<th>Last Booking Date</th>"
+                                    //    Thead = Thead + "<th>WH Count</th>"
+                                    //    Thead = Thead + "<th>WRS Count</th>"
+                                    //    $("#tbl_bookingMissingData tbody").append(Thead);
+                                    //}
+                                    //End here
+
+                                    //Start Body Data
+                                    if (i < 5) {
+                                        mdte = mdte + '<tr>';
+                                        mdte = mdte + '<td>' + mobjData[i].WRSCinemaName + '</td>'
+                                        mdte = mdte + '<td>' + mobjData[i].BookingDate + '</td>'
+                                        mdte = mdte + '<td>' + mobjData[i].WHCounts + '</td>'
+                                        mdte = mdte + '<td>' + mobjData[i].WRSCounts + '</td>'
+                                        mdte = mdte + '</tr>'
+                                    }
+                                    //End Here
+                                    //Call Chart
+                                    BindMissionDataChart(mobjData);
+                                }
+                            }
+                            else {
+                                ///mdte = 'No record found'
+                                $("#x_panelBookingHeader").hide();
+                            }
+                            if (mdte != "") {
+                                $("#tbl_bookingMissingData tbody").append(mdte);
+                                $("#missingViewMore").show();
+                            }
+                            else {
+                                $("#missingViewMore").hide();
+                            }
+                            $("#tbl_bookingMissingData").DataTable({ "ordering": false, "bInfo": false, "paging": false, "searching": false, "iDisplayLength": 2, "lengthMenu": [[20, 50, 100, -1], [20, 50, 100, "All"]] });
+
+                        }
+
+
+                        // Prepare Chart 
+
+                        function BindMissionDataChart(mobjData) {
+                            $("#x_panelBookingHeader").show();
+                            $("#div_MissingmdDataContainer").html('');
+                            $("#div_MissingmdDataContainer").append('<canvas id="_missionHeaderChart" height="200"></canvas>');
+                            // Return with commas in between
+                            var numberWithCommas = function (x) {
+                                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                            };
+                            var WHCountData = [];
+                            var WRSCountData = [];
+                            var MissionDates = [];
+                            for (var count = 0; count < mobjData.length; count++) {
+                                WHCountData.push(mobjData[count].WHCounts);
+                                WRSCountData.push(mobjData[count].WRSCounts);
+                                MissionDates.push(mobjData[count].WRSCinemaName + ' (' + mobjData[count].BookingDate + ')');
+                            }
+
+
+
+                            var bar_ctx = document.getElementById('_missionHeaderChart');
+                            var bar_chart = new Chart(bar_ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: MissionDates,
+                                    datasets: [
+                                    {
+                                        label: 'WH Counts',
+                                        data: WHCountData,
+                                        backgroundColor: "#3498DB",
+                                        hoverBackgroundColor: "#3498DB",
+                                        hoverBorderWidth: 2,
+                                        hoverBorderColor: '#3498DB'
+                                    },
+                                    {
+                                        label: 'WRS Counts',
+                                        data: WRSCountData,
+                                        backgroundColor: "#F7464A",
+                                        hoverBackgroundColor: "#F7464A",
+                                        hoverBorderWidth: 2,
+                                        hoverBorderColor: '#F7464A'
+                                    },
+                                    ],
+                                    responsive: true
+                                },
+                                options: {
+                                    tooltips: {
+                                        mode: 'label',
+                                        callbacks: {
+                                            label: function (tooltipItem, data) {
+                                                return data.datasets[tooltipItem.datasetIndex].label + ": " + numberWithCommas(tooltipItem.yLabel);
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        xAxes: [{
+                                            //stacked: true,
+                                            // gridLines: { display: false },
+                                            // barPercentage: 0.8
+
+                                        }],
+                                        yAxes: [{
+                                            // stacked: true,
+                                            ticks: {
+                                                callback: function (value) { return numberWithCommas(value); },
+                                                beginAtZero: true
+                                            },
+                                        }],
+                                    }, // scales
+                                    legend: { display: true }
+                                } // options
+                            }
+                            );
+                        }
+
+
+                    </script>
+                    <% } %>
+                    <% else
+                       { %>
+                    <script>
+                        $("#div_MissingmdDataContainer tbody").html('No record found');
+                    </script>
+                    <% } %>
+                </div>
+
+<div>
+                                <% if (!(string.IsNullOrEmpty(mobj_JSONresult_SuccessData)))
+                                   {%>
+                                <script>
+
+                                    BindTable();
+                                    function BindTable() {
+                                        var mdte = "";
+                                        var _merchant = "";
+                                        var mobjData = JSON.parse('<%=mobj_JSONresult_SuccessData %>');
+                                        if (mobjData.length > 0) {
+                                            for (var i = 0; i < mobjData.length; i++) {
+
+                                                //Set Header
+                                                //if (i == 0) {
+                                                //    var Thead = "";
+                                                //    Thead = Thead + "<th>Cinema Name</th>"
+                                                //    Thead = Thead + "<th>Last Booking Date</th>"
+                                                //    $("#tblHead4").append(Thead);
+                                                //}
+                                                //End here
+
+                                                //Start Body Data
+                                                if (i < 5) {
+                                                    mdte = mdte + '<tr>';
+                                                    mdte = mdte + '<td>' + mobjData[i].WRSCinemaName + '</td>'
+                                                    mdte = mdte + '<td>' + mobjData[i].BookingDate + '</td>'
+                                                    mdte = mdte + '</tr>'
+                                                }
+                                                //End Here
+
+                                            }
+                                        }
+                                        //else {
+                                        //    mdte = 'No record found'
+                                        //}
+                                        if (mdte != "") {
+                                            $("#tbl_bookingSuccessData tbody").append(mdte);
+                                            $("#SuccessViewMore").show();
+                                        }
+                                        else {
+
+                                            $("#SuccessViewMore").hide();
+                                        }
+
+                                        $("#tbl_bookingSuccessData").DataTable({ "ordering": false, "bInfo": false, "paging": false, "searching": false, "iDisplayLength": 20, "lengthMenu": [[20, 50, 100, -1], [20, 50, 100, "All"]] });
+
+                                    }
+
+                                </script>
+                                <% } %>
+                                <% else
+                                   { %>
+                                <script>
+                                    $("#tbl_bookingSuccessData tbody").html('No record found');
+                                </script>
+                                <% } %>
+                            </div>
+
+<div>
+                                <% if (!(string.IsNullOrEmpty(mobj_JSONresult_LastMappingDate)))
+                                   {%>
+                                <script>
+
+                                    BindTable();
+                                    function BindTable() {
+                                        var mdte = "";
+                                        var _merchant = "";
+                                        var mobjData = JSON.parse('<%=mobj_JSONresult_LastMappingDate %>');
+                                        if (mobjData.length > 0) {
+                                            for (var i = 0; i < mobjData.length; i++) {
+                                                
+                                                //Start Body Data
+                                                if (i < 5) {
+                                                    mdte = mdte + '<tr>';
+                                                    mdte = mdte + '<td>' + mobjData[i].MerchantHeaderName + '</td>'
+                                                    mdte = mdte + '<td>' + mobjData[i].LastMappingDate + '</td>'
+                                                    mdte = mdte + '</tr>'
+                                                }
+                                                //End Here
+
+                                            }
+                                        }
+                                        //else {
+                                        //    mdte = 'No record found'
+                                        //}
+                                        if (mdte != "") {
+                                            $("#tbl_merchantLastMapping tbody").append(mdte);
+                                            $("#LastMappingViewMore").show();
+                                        }
+                                        else {
+
+                                            $("#LastMappingViewMore").hide();
+                                        }
+
+                                        $("#tbl_merchantLastMapping").DataTable({ "ordering": false, "bInfo": false, "paging": false, "searching": false, "iDisplayLength": 20, "lengthMenu": [[20, 50, 100, -1], [20, 50, 100, "All"]] });
+
+                                    }
+
+                                </script>
+                                <% } %>
+                                <% else
+                                   { %>
+                                <script>
+                                    $("#tbl_merchantLastMapping tbody").html('No record found');
+                                </script>
+                                <% } %>
+                            </div>
